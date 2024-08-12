@@ -1,0 +1,21 @@
+{
+  "name": "cloudwatch-sg-update-monitor",
+  "version": "1.0.0",
+  "description": "",
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.140",
+    "@typescript-eslint/eslint-plugin": "^8.0.1",
+    "eslint": "^8.27.0",
+    "serverless": "^3.39.0",
+    "serverless-plugin-aws-alerts": "^1.7.5",
+    "serverless-plugin-typescript": "^2.1.5"
+  },
+  "scripts": {
+    "build": "serverless package"
+  },
+  "type": "module",
+  "dependencies": {
+    "@aws-sdk/client-ec2": "^3.624.0",
+    "netmask": "^2.0.2"
+  }
+}

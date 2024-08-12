@@ -1,0 +1,70 @@
+service: cloudwatch-sg-update-monitor
+
+provider:
+  name: aws
+  profile: saml
+  stage: dev
+  stackTags: ${self:provider.tags}
+  deploymentBucket:
+    tags: ${self:provider.tags}
+  tags:
+    environment:  ${self:provider.stage}
+    env:  ${self:provider.stage}
+    application: cloudwatch-sg-update-monitor
+    service: cloudwatch-sg-update-monitor
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - ec2:DescribeSecurityGroups
+            - sns:Publish
+          Resource: ["*"]
+
+functions:
+  securityGroupChangeAutoResponse:
+    handler: src/index.lambdaHandler
+    runtime: nodejs20.x
+    alarms:
+      - errors
+    events:
+      - eventBridge:
+          pattern:
+            detail:
+              eventSource:
+                - ec2.amazonaws.com
+              eventName:
+                - AuthorizeSecurityGroupIngress
+                # - RevokeSecurityGroupIngress
+
+custom: 
+  alerts: 
+    definitions: 
+      errors: 
+        nameTemplate: $[functionName]-errors 
+        treatMissingData: ignore 
+        threshold: 1 
+        period: 3600 
+        comparisonOperator: GreaterThanOrEqualToThreshold 
+        evaluationPeriods: 1 
+        namespace: 'AWS/Lambda' 
+        metric: Errors 
+        statistic: Sum 
+        datapointsToAlarm: 1 
+    topics: 
+      alarm: 
+        topic: 
+          Ref: MonitoringAlerts
+
+plugins:
+  - serverless-plugin-typescript
+  - serverless-plugin-aws-alerts
+
+resources:
+  Resources:
+    MonitoringAlerts:
+      Type: AWS::SNS::Topic
+      Properties:
+        DisplayName: '${self:service} Monitoring Alerts'
+        TopicName: '${self:service}-${self:provider.stage}-monitoringAlerts'
+        FifoTopic: false
